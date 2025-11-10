@@ -94,7 +94,7 @@ export default function Home() {
             </div>
             <h1>
               Connect Your World with
-              <span className="gradient-text"> Intelligent IoT</span>
+              <span className="gradient-text"> ThingsNxt</span>
             </h1>
             <p>Transform your business with our enterprise-grade IoT platform. Connect, analyze, and automate at scale with unmatched security and performance.</p>
             <div className="hero-buttons">
