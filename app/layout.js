@@ -69,9 +69,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className="scroll-smooth">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="16x16" />
-        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/assets/react-logo@2x.png" />
+        <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
         
         <link
@@ -82,7 +82,7 @@ export default function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         
-        <link rel="preload" href="/assets/adaptive-icon.png" as="image" />
+        <link rel="preload" href="/images/hero-bg.jpg" as="image" />
         
         <script
           type="application/ld+json"
