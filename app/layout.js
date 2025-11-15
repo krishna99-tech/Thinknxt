@@ -1,6 +1,7 @@
 import './globals.css'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import PageLoader from '../components/PageLoader'
 
 export const metadata = {
   title: {
@@ -68,10 +69,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
-        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="16x16" />
+        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/assets/react-logo@2x.png" />
         <link rel="manifest" href="/site.webmanifest" />
         
         <link
@@ -82,43 +86,44 @@ export default function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         
-        <link rel="preload" href="/images/hero-bg.jpg" as="image" />
+        <link rel="preload" href="/assets/adaptive-icon.png" as="image" />
         
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "ThingsNXT",
-              "alternateName": "ThingsNXT Platform",
-              "url": "https://thingsnxt.com",
-              "logo": "https://thingsnxt.com/logo.png",
-              "description": "Enterprise IoT integration platform for real-time data collection and smart device control",
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Tech Hub, Innovation Drive",
-                "addressLocality": "Silicon Valley",
-                "addressRegion": "CA",
-                "postalCode": "94000",
-                "addressCountry": "US"
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'ThingsNXT',
+              alternateName: 'ThingsNXT Platform',
+              url: 'https://thingsnxt.com',
+              logo: 'https://thingsnxt.com/logo.png',
+              description: 'Enterprise IoT integration platform for real-time data collection and smart device control',
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: 'Tech Hub, Innovation Drive',
+                addressLocality: 'Silicon Valley',
+                addressRegion: 'CA',
+                postalCode: '94000',
+                addressCountry: 'US',
               },
-              "contactPoint": {
-                "@type": "ContactPoint",
-                "telephone": "+1-555-123-4567",
-                "contactType": "customer service",
-                "areaServed": "US",
-                "availableLanguage": "en"
+              contactPoint: {
+                '@type': 'ContactPoint',
+                telephone: '+1-555-123-4567',
+                contactType: 'customer service',
+                areaServed: 'US',
+                availableLanguage: 'en',
               },
-              "sameAs": [
-                "https://twitter.com/thingsnxt",
-                "https://linkedin.com/company/thingsnxt"
-              ]
+              sameAs: [
+                'https://twitter.com/thingsnxt',
+                'https://linkedin.com/company/thingsnxt',
+              ],
             })
           }}
         />
       </head>
       <body className="antialiased">
+        <PageLoader />
         <Header />
         <main id="main-content">
           {children}
@@ -131,23 +136,6 @@ export default function RootLayout({ children }) {
         >
           Skip to main content
         </a>
-
-        <div id="global-loader" className="global-loader">
-          <div className="loader-spinner">
-            <div className="loader-icon">
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="40" height="40" rx="8" fill="url(#loaderGradient)" />
-                <path d="M10 20L14 24L22 16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <defs>
-                  <linearGradient id="loaderGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#4F46E5" />
-                    <stop offset="100%" stopColor="#7C3AED" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-        </div>
       </body>
     </html>
   )
