@@ -2,24 +2,31 @@ export default function Products() {
   const products = [
     {
       id: 1,
-      name: "IoT Core Platform",
-      description: "Central hub for device management and data processing",
-      features: ["Device Management", "Data Ingestion", "Real-time Monitoring"],
+      name: "Real-Time Data Collection",
+      description: "Collect and process IoT sensor data in real-time with zero latency",
+      features: ["Live Data Streaming", "Multi-Protocol Support", "Data Aggregation", "Instant Alerts"],
       price: "$99/month"
     },
     {
       id: 2,
-      name: "Analytics Suite",
-      description: "Advanced analytics and machine learning capabilities",
-      features: ["Predictive Analytics", "Custom Dashboards", "AI Insights"],
+      name: "Smart Device Control",
+      description: "Monitor and control connected devices from a unified dashboard",
+      features: ["Remote Device Management", "Command Scheduling", "Device Groups", "Action Automation"],
       price: "$149/month"
     },
     {
       id: 3,
-      name: "Security Module",
-      description: "End-to-end security for your IoT ecosystem",
-      features: ["Encryption", "Access Control", "Threat Detection"],
-      price: "$79/month"
+      name: "IoT Analytics & Intelligence",
+      description: "Advanced analytics and machine learning for IoT data insights",
+      features: ["Predictive Analytics", "Custom Reports", "AI Pattern Detection", "Trend Analysis"],
+      price: "$199/month"
+    },
+    {
+      id: 4,
+      name: "Enterprise Integration",
+      description: "Seamless integration with existing enterprise systems and APIs",
+      features: ["Custom API Access", "Webhook Support", "Database Sync", "ERP Integration"],
+      price: "$299/month"
     }
   ]
 
@@ -27,8 +34,8 @@ export default function Products() {
     <>
       <section className="page-hero">
         <div className="container">
-          <h1>Our Products</h1>
-          <p>Comprehensive IoT solutions for every need</p>
+          <h1>ThingsNXT Platform Features</h1>
+          <p>Comprehensive IoT solutions for real-time data collection and smart device control</p>
         </div>
       </section>
 
@@ -45,7 +52,7 @@ export default function Products() {
                   ))}
                 </ul>
                 <div className="product-price">{product.price}</div>
-                <button className="btn-primary">Get Started</button>
+                <button className="btn-primary">Start Free Trial</button>
               </div>
             ))}
           </div>
