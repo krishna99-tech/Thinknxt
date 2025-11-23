@@ -63,7 +63,7 @@ export const metadata = {
     google: 'your-google-verification-code',
     yandex: 'your-yandex-verification-code',
   },
-}
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -77,7 +77,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/assets/react-logo@2x.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        
+
         <link
           rel="preload"
           href="/fonts/inter-var.woff2"
@@ -85,9 +85,9 @@ export default function RootLayout({ children }) {
           type="font/woff2"
           crossOrigin="anonymous"
         />
-        
+
         <link rel="preload" href="/assets/adaptive-icon.png" as="image" />
-        
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -122,7 +122,9 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="antialiased">
+
+      {/* HYDRATION WARNING FIX APPLIED HERE */}
+      <body suppressHydrationWarning={true} className="antialiased">
         <PageLoader />
         <Header />
         <main id="main-content">
@@ -138,5 +140,5 @@ export default function RootLayout({ children }) {
         </a>
       </body>
     </html>
-  )
+  );
 }

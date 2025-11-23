@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,7 +12,8 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     minHeight: "100vh",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily:
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     padding: "20px",
     backgroundColor: "#f9fafb",
   },
@@ -92,12 +93,6 @@ const styles = {
     borderRadius: "12px",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
   },
-  passwordStrength: {
-    backgroundColor: "#f3f4f6",
-    padding: "12px 16px",
-    borderRadius: "8px",
-    fontSize: "14px",
-  },
 };
 
 export default function ResetPasswordComponent() {
@@ -107,7 +102,6 @@ export default function ResetPasswordComponent() {
 
   const [validToken, setValidToken] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -115,18 +109,15 @@ export default function ResetPasswordComponent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError("Invalid or missing reset token.");
-      setValidToken(false);
-      setLoading(false);
-      return;
-    }
+    if (token === null) return; // wait until token loads
 
     (async () => {
       try {
-        const res = await axios.get(`${API_BASE}/verify-reset-token?token=${token}`);
+        const res = await axios.get(
+          `${API_BASE}/verify-reset-token?token=${token}`
+        );
         if (res.status === 200) setValidToken(true);
-      } catch (err) {
+      } catch {
         setError("Invalid or expired reset token. Please request a new password.");
         setValidToken(false);
       } finally {
@@ -143,13 +134,22 @@ export default function ResetPasswordComponent() {
     setMessage("");
     setError("");
 
-    if (!password || !confirmPassword) return setError("Please fill in both password fields.");
-    if (!validatePassword(password)) return setError("Password must contain uppercase, lowercase, numbers, min 8 chars.");
-    if (password !== confirmPassword) return setError("Passwords do not match.");
+    if (!password || !confirmPassword)
+      return setError("Please fill in both password fields.");
+    if (!validatePassword(password))
+      return setError(
+        "Password must contain uppercase, lowercase, numbers, min 8 chars."
+      );
+    if (password !== confirmPassword)
+      return setError("Passwords do not match.");
 
     setIsSubmitting(true);
+
     try {
-      const res = await axios.post(`${API_BASE}/reset-password`, { token, new_password: password });
+      const res = await axios.post(`${API_BASE}/reset-password`, {
+        token,
+        new_password: password,
+      });
       setMessage(res.data.message || "Password reset successfully.");
       setTimeout(() => router.push("/login"), 2000);
     } catch {
@@ -159,7 +159,8 @@ export default function ResetPasswordComponent() {
     }
   };
 
-  if (loading) {
+  // Loading state
+  if (loading)
     return (
       <div style={styles.container}>
         <div style={styles.loadingSpinner}>
@@ -168,22 +169,42 @@ export default function ResetPasswordComponent() {
         </div>
       </div>
     );
-  }
 
-  if (!validToken) {
+  // No token provided
+  if (!loading && !token)
+    return (
+      <div style={styles.container}>
+        <div style={styles.errorBox}>
+          <h1>⚠️ Missing Token</h1>
+          <p>Please request a new reset link.</p>
+          <button
+            onClick={() => router.push("/forgot-password")}
+            style={styles.button}
+          >
+            Request Reset Link
+          </button>
+        </div>
+      </div>
+    );
+
+  // Token invalid or expired
+  if (!validToken)
     return (
       <div style={styles.container}>
         <div style={styles.errorBox}>
           <h1>⚠️ Invalid or Expired Token</h1>
           <p>{error}</p>
-          <button onClick={() => router.push("/forgot-password")} style={styles.button}>
-            Request New Password Reset
+          <button
+            onClick={() => router.push("/forgot-password")}
+            style={styles.button}
+          >
+            Request New Reset Link
           </button>
         </div>
       </div>
     );
-  }
 
+  // Main UI Form
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -201,7 +222,6 @@ export default function ResetPasswordComponent() {
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
               disabled={isSubmitting}
-              autoComplete="new-password"
             />
           </div>
 
@@ -213,7 +233,6 @@ export default function ResetPasswordComponent() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               style={styles.input}
               disabled={isSubmitting}
-              autoComplete="new-password"
             />
           </div>
 
@@ -226,12 +245,36 @@ export default function ResetPasswordComponent() {
           </button>
         </form>
 
-        {message && <div style={{ ...styles.message, backgroundColor: "#d1fae5", color: "#065f46" }}>✓ {message}</div>}
-        {error && <div style={{ ...styles.message, backgroundColor: "#fee2e2", color: "#7f1d1d" }}>✗ {error}</div>}
+        {message && (
+          <div
+            style={{
+              ...styles.message,
+              backgroundColor: "#d1fae5",
+              color: "#065f46",
+            }}
+          >
+            ✓ {message}
+          </div>
+        )}
 
-        <div style={styles.footer}>
+        {error && (
+          <div
+            style={{
+              ...styles.message,
+              backgroundColor: "#fee2e2",
+              color: "#7f1d1d",
+            }}
+          >
+            ✗ {error}
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", marginTop: "10px" }}>
           <p>
-            Remember your password? <a href="/login" style={styles.link}>Login here</a>
+            Remember your password?{" "}
+            <a href="/login" style={styles.link}>
+              Login here
+            </a>
           </p>
         </div>
       </div>
