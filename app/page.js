@@ -96,7 +96,7 @@ export default function Home() {
               Connect Your World with
               <span className="gradient-text"> ThingsNxt</span>
             </h1>
-            <p>Transform your business with our enterprise-grade IoT platform. Connect, analyze, and automate at scale with unmatched security and performance.</p>
+            <p>Transform your business with our enterprise-grade  ThingNXT platform. Connect, analyze, and automate at scale with unmatched security and performance.</p>
             <div className="hero-buttons">
               <Link href="/get-started" className="btn btn-primary btn-large">
                 Start Free Trial
@@ -158,7 +158,7 @@ export default function Home() {
       <section className="features">
         <div className="container">
           <div className="section-header">
-            <h2>Why Choose IoTConnect?</h2>
+            <h2>Why Choose ThingsNXT?</h2>
             <p>Built for scale, designed for performance, trusted by enterprises worldwide</p>
           </div>
           <div className="features-grid">
@@ -191,7 +191,7 @@ export default function Home() {
         <div className="container">
           <div className="section-header">
             <h2>What Our Customers Say</h2>
-            <p>Join thousands of companies transforming their business with IoTConnect</p>
+            <p>Join thousands of companies transforming their business with ThingNXT</p>
           </div>
           <div className="testimonials-grid">
             {testimonials.map((testimonial, index) => (
@@ -220,7 +220,7 @@ export default function Home() {
         <div className="container">
           <div className="section-header">
             <h2>Powering Innovation Across Industries</h2>
-            <p>Discover how IoTConnect drives digital transformation across various sectors</p>
+            <p>Discover how ThingNXT drives digital transformation across various sectors</p>
           </div>
           <div className="use-cases-grid">
             <div className="use-case">
@@ -253,7 +253,7 @@ export default function Home() {
           <div className="cta-content">
             <div className="cta-text">
               <h2>Ready to Transform Your Business?</h2>
-              <p>Join 10,000+ companies using IoTConnect to drive innovation and growth. Start your free trial today.</p>
+              <p>Join 10,000+ companies using ThinsNXT to drive innovation and growth. Start your free trial today.</p>
               <div className="cta-features">
                 <div className="cta-feature">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

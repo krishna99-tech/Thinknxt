@@ -1,3 +1,6 @@
+import { hr } from "framer-motion/client"
+import { href } from "react-router-dom"
+
 export default function Support() {
   const supportOptions = [
     {
@@ -33,7 +36,7 @@ export default function Support() {
       description: "Get direct assistance from ThingsNXT engineers for implementation and troubleshooting",
       features: ["24/7 Support", "Expert Engineers", "Priority Response", "Custom Solutions"],
       buttonText: "Contact Support",
-      buttonVariant: "primary",
+      buttonVariant: "secondary",
       popular: false
     },
     {

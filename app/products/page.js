@@ -52,7 +52,7 @@ export default function Products() {
                   ))}
                 </ul>
                 <div className="product-price">{product.price}</div>
-                <button className="btn-primary">Start Free Trial</button>
+                <button className="btn">Start Free Trial</button>
               </div>
             ))}
           </div>

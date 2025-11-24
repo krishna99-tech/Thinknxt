@@ -70,7 +70,7 @@ export default function ContactForm() {
         ></textarea>
       </div>
       
-      <button type="submit" className="btn-primary">Send Message</button>
+      <button type="submit" className="btn">Send Message</button>
     </form>
   )
 }

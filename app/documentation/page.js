@@ -191,12 +191,11 @@ export default function Documentation() {
                 <h2>Need Additional Help?</h2>
                 <p>Our support team is here to help you succeed with IoTConnect. Get personalized assistance for your specific use case.</p>
                 <div className="resources-actions">
-                  <button className="btn-primary">
+                    <a href="/contact" className="learn-more-link">
+                  <button className="btn">
                     Contact Support
-                  </button>
-                  <button className="btn-secondary">
-                    Join Community
-                  </button>
+                  </button>         
+                  </a>       
                 </div>
               </div>
               <div className="resources-features">

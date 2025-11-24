@@ -1,0 +1,29 @@
+/* Default styles for the mobile action buttons container */
+.header-actions-mobile {
+    display: none; /* Hidden by default on all screen sizes */
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* A nice separator line */
+}
+
+/* --- Mobile View --- */
+/* This media query targets screens 768px wide or smaller */
+@media (max-width: 768px) {
+
+    /* Hide the original desktop action buttons */
+    .header .header-actions {
+        display: none;
+    }
+
+    /*
+     * When the navigation menu is open (body has .nav-open or nav has .nav-open),
+     * we display the mobile-specific action buttons.
+     * Since these buttons are inside the <nav> element which is shown/hidden,
+     * we just need to set their display property to flex.
+    */
+    .header .nav-open .header-actions-mobile {
+        display: flex;
+    }
+}

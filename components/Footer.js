@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>IoTConnect</h3>
+            <h3>ThingsNXT</h3>
             <p>Connecting your world through intelligent IoT solutions.</p>
           </div>
           
@@ -20,14 +20,14 @@ export default function Footer() {
           
           <div className="footer-section">
             <h4>Contact Info</h4>
-            <p>Email: info@iotconnect.com</p>
-            <p>Phone: +1 (555) 123-4567</p>
-            <p>Address: 123 Tech Park, Silicon Valley</p>
+            <p>Email: info@thingsnxt.com</p>
+            <p>Phone: #############</p>
+            <p>Address: ######################</p>
           </div>
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; 2024 IoTConnect. All rights reserved.</p>
+          <p>&copy; 2024 ThingsNXT. All rights reserved.</p>
         </div>
       </div>
     </footer>
