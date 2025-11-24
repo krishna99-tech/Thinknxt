@@ -1,5 +1,3 @@
-import { hr } from "framer-motion/client"
-import { href } from "react-router-dom"
 
 export default function Support() {
   const supportOptions = [
