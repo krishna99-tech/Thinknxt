@@ -6,7 +6,7 @@ import Link from "next/link";
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://192.168.29.139:8000";
 
 // Create a separate CSS file or use this approach
 const AnimationStyles = () => (
@@ -234,17 +234,25 @@ export default function LoginComponent() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/login`, {
-        email,
-        password,
+      // Prepare form data for OAuth2 password flow
+      const formData = new URLSearchParams();
+      formData.append('username', email); // The backend expects 'username' for the identifier
+      formData.append('password', password);
+
+      // Post to the /token endpoint with form data
+      const response = await axios.post(`${API_BASE}/token`, formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
       const token = response.data.access_token;
-      Cookies.set("auth_token", token, { expires: 1 });
+      Cookies.set("auth_token", token, { expires: 1 }); // Store token in a cookie
       console.log("Login successful:", response.data);
 
-      router.push("/dashboard");
+      router.push("/dashboard"); // Redirect to dashboard on success
     } catch (err) {
+      // Handle login errors
       setError(
         err.response?.data?.detail || "Invalid credentials. Please try again."
       );
@@ -324,9 +332,9 @@ export default function LoginComponent() {
             marginBottom: "20px",
           }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>Email</label>
+              <label style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>Email or Username</label>
               <input 
-                type="email" 
+                type="text" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 style={{
