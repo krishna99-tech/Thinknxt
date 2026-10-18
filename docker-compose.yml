@@ -1,0 +1,26 @@
+version: '3.3'
+
+services:
+  thinknxt-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://100.77.110.74:8001}
+    image: thingsnxt-thinknxt-web:latest
+    container_name: thingsnxt-thinknxt-web
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://100.77.1110.74:8001}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: app-network
+    external: true

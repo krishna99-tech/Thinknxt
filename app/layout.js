@@ -73,20 +73,6 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="16x16" />
-        <link rel="icon" href="/assets/react-logo.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/assets/react-logo@2x.png" />
-        <link rel="manifest" href="/site.webmanifest" />
-
-        <link
-          rel="preload"
-          href="/fonts/inter-var.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-
-        <link rel="preload" href="/assets/adaptive-icon.png" as="image" />
 
         <script
           type="application/ld+json"
