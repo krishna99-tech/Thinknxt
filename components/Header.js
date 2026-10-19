@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { getToken, logout } from '../lib/auth'
 import './Header.css'
 
 const HeaderBackgroundLoader = () => {
@@ -46,7 +47,12 @@ const HeaderBackgroundLoader = () => {
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    setIsAuthenticated(Boolean(getToken()))
+  }, [pathname])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,7 +68,8 @@ export default function Header() {
     { href: '/products', label: 'Products' },
     { href: '/documentation', label: 'Documentation' },
     { href: '/support', label: 'Support' },
-    { href: '/contact', label: 'Contact' }
+    { href: '/contact', label: 'Contact' },
+    ...(isAuthenticated ? [{ href: '/dashboard', label: 'Dashboard' }] : []),
   ]
 
   const isActive = (href) => {
@@ -72,12 +79,16 @@ export default function Header() {
     return pathname.startsWith(href)
   }
 
+  if (['/dashboard', '/login', '/register', '/forgot-password', '/reset-password'].some(p => pathname?.startsWith(p))) {
+    return null
+  }
+
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <HeaderBackgroundLoader />
       <div className="container">
         <div className="logo">
-          <Link href="/" className="logo-link">
+          <Link href={isAuthenticated ? "/dashboard" : "/"} className="logo-link">
             <div className="logo-icon">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="32" height="32" rx="8" fill="url(#logoGradient)"/>
@@ -108,22 +119,59 @@ export default function Header() {
             </Link>
           ))}
           <div className="header-actions-mobile">
-            <Link href="/login" className="btn-login" onClick={() => setIsMenuOpen(false)}>
-              Sign In
-            </Link>
-            <Link href="/get-started" className="btn-get-started" onClick={() => setIsMenuOpen(false)}>
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard" className="btn-get-started" onClick={() => setIsMenuOpen(false)}>
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    logout('/login');
+                  }}
+                  className="btn-login"
+                  style={{ cursor: 'pointer', background: 'transparent' }}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="btn-login" onClick={() => setIsMenuOpen(false)}>
+                  Sign In
+                </Link>
+                <Link href="/get-started" className="btn-get-started" onClick={() => setIsMenuOpen(false)}>
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </nav>
 
         <div className="header-actions">
-          <Link href="/login" className="btn-login">
-            Sign In
-          </Link>
-          <Link href="/get-started" className="btn-get-started">
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link href="/dashboard" className="btn-get-started">  
+                Dashboard
+              </Link>
+              <button
+                onClick={() => logout('/login')}
+                className="btn-login"
+                style={{ cursor: 'pointer', background: 'transparent' }}
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn-login">
+                Sign In
+              </Link>
+              <Link href="/get-started" className="btn-get-started">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         <button 
@@ -138,4 +186,4 @@ export default function Header() {
       </div>
     </header>
   )
-}
+  }

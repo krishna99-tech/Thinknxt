@@ -1,6 +1,13 @@
+'use client'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function Footer() {
+  const pathname = usePathname()
+  if (['/dashboard', '/login', '/register', '/forgot-password', '/reset-password'].some(p => pathname?.startsWith(p))) {
+    return null
+  }
+
   return (
     <footer className="footer">
       <div className="container">
