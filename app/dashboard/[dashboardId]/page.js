@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "../../../lib/api";
 import { getToken, logout } from "../../../lib/auth";
+import { useWebSocket } from "../../../lib/useWebSocket";
 
 export default function WorkspaceDashboardViewerPage({ params }) {
   const resolvedParams = use(params);
@@ -43,6 +44,59 @@ export default function WorkspaceDashboardViewerPage({ params }) {
     }
   }, [dashboardId, wsId]);
 
+  // Handle incoming real-time sensor streams and device online/offline events from Fastify WebSocket
+  const handleWsMessage = useCallback((msg) => {
+    if (!msg) return;
+    setLastUpdated(new Date());
+
+    // 1. Device Online / Offline Status Updates
+    if (msg.type === "status_update") {
+      const devId = msg.device_id;
+      const newStatus = (msg.status || "online").toLowerCase();
+
+      setDashboard((prev) => {
+        if (!prev || !prev.widgets) return prev;
+        const updatedWidgets = prev.widgets.map((w) => {
+          if (w.device_id === devId || String(w.device_id) === String(devId)) {
+            return {
+              ...w,
+              device_status: newStatus,
+            };
+          }
+          return w;
+        });
+        return { ...prev, widgets: updatedWidgets };
+      });
+      return;
+    }
+
+    // 2. Real-Time Telemetry Data Updates
+    if (msg.type === "telemetry_update" || msg.payload || msg.data) {
+      const devId = msg.device_id;
+      const telemData = msg.payload || msg.data || {};
+
+      setDashboard((prev) => {
+        if (!prev || !prev.widgets) return prev;
+        const updatedWidgets = prev.widgets.map((w) => {
+          if (w.device_id === devId || String(w.device_id) === String(devId)) {
+            return {
+              ...w,
+              device_status: "online", // receiving active telemetry guarantees device is online
+              telemetry: { ...(w.telemetry || {}), ...telemData },
+            };
+          }
+          return w;
+        });
+        return { ...prev, widgets: updatedWidgets };
+      });
+    }
+  }, []);
+
+  // Connect to Fastify WebSocket microservice
+  const { isConnected: isWsLive } = useWebSocket(handleWsMessage, [
+    `workspace:${wsId}`,
+  ]);
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -52,12 +106,12 @@ export default function WorkspaceDashboardViewerPage({ params }) {
     fetchDashboard(false);
   }, [fetchDashboard, router]);
 
-  // Periodic auto-refresh every 5 seconds for real-time telemetry streaming
+  // Fallback periodic auto-refresh every 15s (reduced from 5s since Fastify pushes real-time)
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
       fetchDashboard(true);
-    }, 5000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [autoRefresh, fetchDashboard]);
 
@@ -207,28 +261,31 @@ export default function WorkspaceDashboardViewerPage({ params }) {
               </span>
               <span
                 style={{
-                  background: "rgba(16, 185, 129, 0.2)",
-                  color: "#6ee7b7",
-                  border: "1px solid rgba(110, 231, 183, 0.3)",
+                  background: isWsLive ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                  color: isWsLive ? "#6ee7b7" : "#fcd34d",
+                  border: isWsLive
+                    ? "1px solid rgba(110, 231, 183, 0.3)"
+                    : "1px solid rgba(252, 211, 77, 0.3)",
                   fontSize: "11px",
                   fontWeight: "600",
                   padding: "3px 8px",
                   borderRadius: "6px",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "5px",
                 }}
               >
                 <span
                   style={{
-                    width: "6px",
-                    height: "6px",
+                    width: "7px",
+                    height: "7px",
                     borderRadius: "50%",
-                    backgroundColor: "#10b981",
+                    backgroundColor: isWsLive ? "#10b981" : "#f59e0b",
                     display: "inline-block",
+                    boxShadow: isWsLive ? "0 0 8px #10b981" : "none",
                   }}
                 />
-                Live Streaming
+                {isWsLive ? "Fastify Live Stream" : "Connecting Stream..."}
               </span>
             </div>
 
@@ -402,12 +459,25 @@ export default function WorkspaceDashboardViewerPage({ params }) {
                           style={{
                             fontSize: "10px",
                             fontWeight: "700",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            backgroundColor: deviceStatus === "online" ? "#ecfdf5" : "#f1f5f9",
-                            color: deviceStatus === "online" ? "#059669" : "#64748b",
+                            padding: "2px 8px",
+                            borderRadius: "9999px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            backgroundColor: deviceStatus === "online" ? "#ecfdf5" : "#fef2f2",
+                            color: deviceStatus === "online" ? "#059669" : "#dc2626",
+                            border: deviceStatus === "online" ? "1px solid #a7f3d0" : "1px solid #fecaca",
                           }}
                         >
+                          <span
+                            style={{
+                              width: "5px",
+                              height: "5px",
+                              borderRadius: "50%",
+                              backgroundColor: deviceStatus === "online" ? "#10b981" : "#ef4444",
+                              display: "inline-block",
+                            }}
+                          />
                           {deviceStatus.toUpperCase()}
                         </span>
                       </div>

@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://100.77.110.74:8001}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://100.77.110.74:4001/ws}
     image: thingsnxt-thinknxt-web:latest
     container_name: thingsnxt-thinknxt-web
     restart: unless-stopped
@@ -16,7 +17,8 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://100.77.1110.74:8001}
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://100.77.110.74:8001}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://100.77.110.74:4001/ws}
     networks:
       - app-network
 

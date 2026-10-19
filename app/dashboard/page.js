@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api, { getPublicAppConfig } from "../../lib/api";
 import { getToken, logout } from "../../lib/auth";
+import { useWebSocket } from "../../lib/useWebSocket";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,6 +17,27 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [platformConfig, setPlatformConfig] = useState(null);
+  const [liveEvents, setLiveEvents] = useState([]);
+
+  // Listen to live WebSocket device online/offline and telemetry streams from Fastify (port 4001)
+  const handleLiveEvent = useCallback((msg) => {
+    if (!msg) return;
+    if (msg.type === "status_update" || msg.type === "telemetry_update" || msg.payload) {
+      setLiveEvents((prev) => [
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          type: msg.type || "telemetry",
+          deviceId: msg.device_id || "sensor",
+          status: (msg.status || "online").toLowerCase(),
+          timestamp: new Date().toLocaleTimeString(),
+          payload: msg.payload || msg.data,
+        },
+        ...prev.slice(0, 7), // Keep 8 most recent live events
+      ]);
+    }
+  }, []);
+
+  const { isConnected: isLiveWs } = useWebSocket(handleLiveEvent, []);
 
   useEffect(() => {
     getPublicAppConfig().then((cfg) => {
@@ -143,7 +165,7 @@ export default function DashboardPage() {
           }}
         >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "8px" }}>
               <span
                 style={{
                   background: "rgba(37, 99, 235, 0.2)",
@@ -158,6 +180,34 @@ export default function DashboardPage() {
                 }}
               >
                 {userRole} Portal
+              </span>
+              <span
+                style={{
+                  background: isLiveWs ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                  color: isLiveWs ? "#6ee7b7" : "#fcd34d",
+                  border: isLiveWs
+                    ? "1px solid rgba(110, 231, 183, 0.3)"
+                    : "1px solid rgba(252, 211, 77, 0.3)",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  padding: "4px 10px",
+                  borderRadius: "9999px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    backgroundColor: isLiveWs ? "#10b981" : "#f59e0b",
+                    display: "inline-block",
+                    boxShadow: isLiveWs ? "0 0 8px #10b981" : "none",
+                  }}
+                />
+                {isLiveWs ? "Fastify Stream (Port 4001)" : "Fastify Stream (Connecting...)"}
               </span>
               <span style={{ color: "#94a3b8", fontSize: "14px" }}>• Account ID: {user?.id?.slice(0, 8)}...</span>
             </div>
@@ -466,6 +516,130 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Live Device Hardware Activity Feed (Fastify Port 4001) */}
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "20px",
+            padding: "24px 28px",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+            marginTop: "24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
+              marginBottom: "16px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "20px" }}>📡</span>
+              <div>
+                <h3 style={{ fontSize: "17px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
+                  Live Hardware Activity Stream
+                </h3>
+                <p style={{ color: "#64748b", fontSize: "12px", margin: "2px 0 0 0" }}>
+                  Real-time device online/offline pings and sensor packets via Fastify WebSockets (:4001)
+                </p>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: "600",
+                padding: "4px 12px",
+                borderRadius: "9999px",
+                backgroundColor: isLiveWs ? "#ecfdf5" : "#fef3c7",
+                color: isLiveWs ? "#059669" : "#d97706",
+                border: isLiveWs ? "1px solid #a7f3d0" : "1px solid #fde68a",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  backgroundColor: isLiveWs ? "#10b981" : "#f59e0b",
+                  display: "inline-block",
+                }}
+              />
+              {isLiveWs ? "WebSocket Connected" : "Connecting..."}
+            </span>
+          </div>
+
+          {liveEvents.length === 0 ? (
+            <div
+              style={{
+                padding: "24px",
+                textAlign: "center",
+                backgroundColor: "#f8fafc",
+                borderRadius: "12px",
+                border: "1px dashed #cbd5e1",
+              }}
+            >
+              <p style={{ color: "#64748b", fontSize: "13px", margin: 0, fontWeight: "500" }}>
+                Listening for incoming live hardware events...
+              </p>
+              <p style={{ color: "#94a3b8", fontSize: "12px", marginTop: "4px", marginBottom: 0 }}>
+                When your ESP32 connects, updates status, or sends telemetry, packets will stream here automatically.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {liveEvents.map((evt) => (
+                <div
+                  key={evt.id}
+                  style={{
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        textTransform: "uppercase",
+                        backgroundColor: evt.status === "online" ? "#dcfce7" : "#fee2e2",
+                        color: evt.status === "online" ? "#166534" : "#991b1b",
+                        border: evt.status === "online" ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                      }}
+                    >
+                      {evt.status}
+                    </span>
+                    <span style={{ fontWeight: "600", color: "#1e293b", fontSize: "13px" }}>
+                      Device: {evt.deviceId}
+                    </span>
+                    {evt.payload && (
+                      <span style={{ color: "#64748b", fontSize: "12px" }}>
+                        Payload: {JSON.stringify(evt.payload).slice(0, 50)}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ color: "#94a3b8", fontSize: "11px" }}>{evt.timestamp}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Configured Dashboards Section */}
