@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { login, getGoogleAuthUrl } from "../../lib/auth";
 import { getErrorMessage, getPublicAppConfig } from "../../lib/api";
@@ -27,7 +28,7 @@ export default function LoginComponent() {
   const isBlocking = Boolean(mobileSettings.maintenance_blocking);
   const maintenanceMsg =
     mobileSettings.maintenance_message?.trim() ||
-    "All services has been paused for scheduled system maintenance.";
+    "All services have been paused for scheduled system maintenance.";
   const showConnectedApps = mobileSettings.feature_flags?.connected_apps !== false;
 
   useEffect(() => {
@@ -67,6 +68,224 @@ export default function LoginComponent() {
     window.location.href = getGoogleAuthUrl();
   };
 
+  // ── Hard Maintenance Block: full-page with image as hero ──
+  if (isBlocking) {
+    return (
+      <>
+        <style>{`
+          @keyframes maint-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.4); }
+          }
+          @keyframes maint-fade-up {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          .maint-page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+          }
+          .maint-image-section {
+            position: relative;
+            width: 100%;
+            flex: 0 0 auto;
+          }
+          .maint-image-section img {
+            width: 100%;
+            height: 55vh;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+          }
+          .maint-image-fade {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to bottom, transparent, #0a0a0f);
+            pointer-events: none;
+          }
+          .maint-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 32px 24px 40px;
+            animation: maint-fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both;
+          }
+
+          @media (min-width: 900px) {
+            .maint-page {
+              flex-direction: row;
+            }
+            .maint-image-section {
+              flex: 0 0 55%;
+              height: 100vh;
+              position: sticky;
+              top: 0;
+            }
+            .maint-image-section img {
+              height: 100%;
+            }
+            .maint-image-fade {
+              display: none;
+            }
+            .maint-image-side-fade {
+              position: absolute;
+              top: 0;
+              right: 0;
+              bottom: 0;
+              width: 100px;
+              background: linear-gradient(to right, transparent, #0a0a0f);
+              pointer-events: none;
+            }
+            .maint-content {
+              flex: 1;
+              justify-content: center;
+              padding: 60px 48px;
+            }
+          }
+        `}</style>
+
+        <div className="maint-page">
+          {/* ── Image Hero Section ── */}
+          <div className="maint-image-section">
+            <img
+              src="/images/maintenance-crew.png"
+              alt="Futuristic maintenance crew at work"
+            />
+            {/* Bottom fade for mobile (column layout) */}
+            <div className="maint-image-fade" />
+            {/* Right-edge fade for desktop (row layout) */}
+            <div className="maint-image-side-fade" />
+          </div>
+
+          {/* ── Content Section ── */}
+          <div className="maint-content">
+            <div style={{ maxWidth: "420px", width: "100%" }}>
+
+              {/* Brand tag */}
+              <span style={{
+                fontSize: "11px",
+                fontWeight: "700",
+                letterSpacing: "0.2em",
+                color: "#a78bfa",
+                textTransform: "uppercase",
+                display: "block",
+                marginBottom: "24px",
+              }}>
+                ThingsNXT Platform
+              </span>
+
+              {/* Status badge */}
+              <div style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "rgba(239,68,68,0.12)",
+                border: "1px solid rgba(239,68,68,0.35)",
+                borderRadius: "999px",
+                padding: "6px 18px",
+                marginBottom: "28px",
+              }}>
+                <span style={{
+                  width: "7px",
+                  height: "7px",
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  display: "inline-block",
+                  animation: "maint-pulse 1.4s ease-in-out infinite",
+                }} />
+                <span style={{
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  letterSpacing: "0.08em",
+                  color: "#fca5a5",
+                }}>
+                  🛑 HARD MAINTENANCE BLOCK ACTIVE
+                </span>
+              </div>
+
+              {/* Title */}
+              <h1 style={{
+                margin: "0 0 16px",
+                fontSize: "2rem",
+                fontWeight: "800",
+                color: "#ffffff",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.2,
+              }}>
+                System Under Maintenance
+              </h1>
+
+              {/* Dynamic message from backend */}
+              <p style={{
+                margin: "0 0 32px",
+                color: "rgba(255,255,255,0.5)",
+                fontSize: "15px",
+                lineHeight: "1.7",
+              }}>
+                {maintenanceMsg}
+              </p>
+
+              {/* Divider */}
+              <div style={{
+                height: "1px",
+                background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)",
+                marginBottom: "24px",
+              }} />
+
+              {/* Info note */}
+              <p style={{
+                margin: "0 0 32px",
+                fontSize: "13px",
+                color: "rgba(255,255,255,0.3)",
+                lineHeight: "1.65",
+              }}>
+                All sign-ins — including Google — are suspended while the
+                platform undergoes scheduled upgrades. Please check back shortly.
+              </p>
+
+              {/* Back link */}
+              <Link
+                href="/"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  color: "#a78bfa",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  transition: "color 0.2s",
+                }}
+              >
+                ← Back to ThingsNXT
+              </Link>
+
+              {/* Bottom monospace hint */}
+              <p style={{
+                marginTop: "40px",
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.15)",
+                fontFamily: "monospace",
+                letterSpacing: "0.04em",
+              }}>
+                thingsnxt.com • maintenance window in progress
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <AuthLayout maxWidth="450px">
       <div style={{ marginBottom: "30px", textAlign: "center" }}>
@@ -85,62 +304,48 @@ export default function LoginComponent() {
         </p>
       </div>
 
-      {isBlocking ? (
+      {/* Soft maintenance advisory banner (non-blocking) */}
+      {isMaintenance && (
         <div
           style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #f87171",
-            borderRadius: "10px",
-            padding: "14px 16px",
-            marginBottom: "20px",
-            color: "#991b1b",
-            fontSize: "13px",
-            lineHeight: "1.4",
-          }}
-        >
-          <div
-            style={{
-              fontWeight: "700",
-              marginBottom: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <span>🛑</span> Hard Maintenance Block Active
-          </div>
-          <div>{maintenanceMsg}</div>
-          <div style={{ marginTop: "6px", fontSize: "11px", color: "#b91c1c" }}>
-            Note: Standard client and workspace member logins are paused during scheduled maintenance. Platform administrators may continue.
-          </div>
-        </div>
-      ) : isMaintenance ? (
-        <div
-          style={{
+            display: "flex",
+            gap: "14px",
+            alignItems: "flex-start",
             backgroundColor: "#fffbeb",
             border: "1px solid #fcd34d",
-            borderRadius: "10px",
-            padding: "12px 16px",
+            borderRadius: "12px",
+            padding: "14px 16px",
             marginBottom: "20px",
-            color: "#92400e",
-            fontSize: "13px",
-            lineHeight: "1.4",
           }}
         >
-          <div
+          <img
+            src="/images/maintenance-crew.png"
+            alt="Maintenance"
             style={{
-              fontWeight: "700",
-              marginBottom: "3px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
+              width: "52px",
+              height: "52px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              flexShrink: 0,
+              border: "1px solid #fde68a",
             }}
-          >
-            <span>⚠️</span> Maintenance Announcement
+          />
+          <div style={{ color: "#92400e", fontSize: "13px", lineHeight: "1.5" }}>
+            <div
+              style={{
+                fontWeight: "700",
+                marginBottom: "3px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span>⚠️</span> Maintenance Announcement
+            </div>
+            <div>{maintenanceMsg}</div>
           </div>
-          <div>{maintenanceMsg}</div>
         </div>
-      ) : null}
+      )}
 
       {successMessage && (
         <div className="auth-toast-success" style={{ marginBottom: "20px" }}>
@@ -201,19 +406,8 @@ export default function LoginComponent() {
           type="submit"
           className="auth-btn-primary"
           disabled={isSubmitting}
-          style={
-            isBlocking
-              ? {
-                  backgroundColor: "#d97706",
-                }
-              : undefined
-          }
         >
-          {isSubmitting
-            ? "Signing In..."
-            : isBlocking
-            ? "Sign In (Admin Bypass)"
-            : "Sign In"}
+          {isSubmitting ? "Signing In..." : "Sign In"}
         </button>
       </form>
 
