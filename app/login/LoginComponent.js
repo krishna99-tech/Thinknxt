@@ -157,7 +157,7 @@ export default function LoginComponent() {
           {/* ── Image Hero Section ── */}
           <div className="maint-image-section">
             <img
-              src="/images/maintenance-crew.png"
+              src="/images/maintenance-crew.svg"
               alt="Futuristic maintenance crew at work"
             />
             {/* Bottom fade for mobile (column layout) */}
@@ -319,7 +319,7 @@ export default function LoginComponent() {
           }}
         >
           <img
-            src="/images/maintenance-crew.png"
+            src="/images/maintenance-crew.svg"
             alt="Maintenance"
             style={{
               width: "52px",
