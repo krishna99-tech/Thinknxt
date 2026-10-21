@@ -6,8 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://100.77.110.74:8001}
-        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://100.77.110.74:4001/ws}
+        INTERNAL_BACKEND_URL: ${INTERNAL_BACKEND_URL:-http://thingsnxt-backend:8000}
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-/api}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-/ws}
     image: thingsnxt-thinknxt-web:latest
     container_name: thingsnxt-thinknxt-web
     restart: unless-stopped
@@ -17,8 +18,9 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://100.77.110.74:8001}
-      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://100.77.110.74:4001/ws}
+      - INTERNAL_BACKEND_URL=${INTERNAL_BACKEND_URL:-http://thingsnxt-backend:8000}
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-/api}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-/ws}
     networks:
       - app-network
     healthcheck:

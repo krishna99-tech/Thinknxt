@@ -19,9 +19,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Arguments for client-side environment variables
-ARG NEXT_PUBLIC_API_BASE=http://100.77.110.74:8001
-ARG NEXT_PUBLIC_WS_URL=ws://100.77.110.74:4001/ws
+# Build Arguments for client-side environment variables and internal backend proxy
+ARG INTERNAL_BACKEND_URL=http://thingsnxt-backend:8000
+ARG NEXT_PUBLIC_API_BASE=/api
+ARG NEXT_PUBLIC_WS_URL=/ws
+ENV INTERNAL_BACKEND_URL=$INTERNAL_BACKEND_URL
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
 ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -43,6 +45,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
+ENV INTERNAL_BACKEND_URL="http://thingsnxt-backend:8000"
 
 # Non-root user for container security
 RUN addgroup --system --gid 1001 nodejs && \
