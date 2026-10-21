@@ -267,4 +267,24 @@ export const Key = createIcon(
   </>
 );
 
+export const Pin = createIcon(
+  <>
+    <line x1="12" y1="17" x2="12" y2="22" />
+    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+  </>
+);
+
+export const PinOff = createIcon(
+  <>
+    <line x1="2" y1="2" x2="22" y2="22" />
+    <line x1="12" y1="17" x2="12" y2="22" />
+    <path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h12" />
+    <path d="M15 9.34V6h1a2 2 0 0 0 0-4H7.89" />
+  </>
+);
+
+export const Star = createIcon(
+  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+);
+
 

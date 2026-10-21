@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { login, getGoogleAuthUrl } from "../../lib/auth";
-import { getErrorMessage, getPublicAppConfig } from "../../lib/api";
+import api, { getErrorMessage, getPublicAppConfig } from "../../lib/api";
 
 const EyeIcon = ({ size = 18, color = "#6b7280" }) => (
   <svg
@@ -93,7 +93,30 @@ export default function LoginComponent() {
 
     try {
       await login(email, password);
-      window.location.href = "/dashboard";
+
+      // Check if user has a pinned dashboard to land on directly
+      let targetUrl = "/dashboard";
+      try {
+        const prefRes = await api.get("/admin/users/me/preferences");
+        const pinned = prefRes.data?.pinned_dashboard;
+        if (pinned && pinned.id) {
+          const wsParam = pinned.workspace_id ? `?ws=${encodeURIComponent(pinned.workspace_id)}` : "";
+          targetUrl = `/dashboard/${pinned.id}${wsParam}`;
+        }
+      } catch {
+        try {
+          const savedStr = typeof window !== "undefined" ? localStorage.getItem("thingsnxt_pinned_dashboard") : null;
+          if (savedStr) {
+            const saved = JSON.parse(savedStr);
+            if (saved?.id) {
+              const wsParam = saved.workspace_id ? `?ws=${encodeURIComponent(saved.workspace_id)}` : "";
+              targetUrl = `/dashboard/${saved.id}${wsParam}`;
+            }
+          }
+        } catch {}
+      }
+
+      window.location.href = targetUrl;
     } catch (err) {
       setError(
         getErrorMessage(err, "Invalid credentials. Please try again.")

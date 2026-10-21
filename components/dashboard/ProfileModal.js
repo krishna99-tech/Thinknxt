@@ -1,6 +1,8 @@
 "use client";
 
-import { User, ShieldCheck, Mail, Key, Clock, CheckCircle2, XCircle, LogOut, Folder } from "../common/Icons";
+import { useState, useEffect } from "react";
+import { User, ShieldCheck, Mail, Key, Clock, CheckCircle2, XCircle, LogOut, Folder, Pin } from "../common/Icons";
+import api from "../../lib/api";
 
 export default function ProfileModal({
   isOpen,
@@ -9,6 +11,26 @@ export default function ProfileModal({
   workspaces = [],
   onLogout,
 }) {
+  const [pinnedInfo, setPinnedInfo] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const savedStr = typeof window !== "undefined" ? localStorage.getItem("thingsnxt_pinned_dashboard") : null;
+      if (savedStr) {
+        setPinnedInfo(JSON.parse(savedStr));
+      }
+    } catch {}
+
+    api.get("/admin/users/me/preferences")
+      .then((res) => {
+        if (res.data?.pinned_dashboard) {
+          setPinnedInfo(res.data.pinned_dashboard);
+        }
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const displayName = user?.display_name || user?.full_name || user?.username || "Enterprise Operator";
@@ -263,6 +285,71 @@ export default function ProfileModal({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Pinned Dashboard Preference Section */}
+          <div
+            style={{
+              padding: "12px 16px",
+              borderRadius: "8px",
+              backgroundColor: pinnedInfo ? "#FFF7ED" : "#F8FAFC",
+              border: `1px solid ${pinnedInfo ? "#FFEDD5" : "#E2E8F0"}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
+                  backgroundColor: pinnedInfo ? "#EA580C" : "#E2E8F0",
+                  color: pinnedInfo ? "#FFFFFF" : "#64748B",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Pin size={15} color={pinnedInfo ? "#FFFFFF" : "#64748B"} />
+              </div>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase" }}>
+                  Default Login Dashboard
+                </span>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: "#0F172A" }}>
+                  {pinnedInfo ? pinnedInfo.name : "None (Displays dashboard gallery)"}
+                </div>
+              </div>
+            </div>
+            {pinnedInfo && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await api.put("/admin/users/me/preferences", { pinned_dashboard: null });
+                  } catch {}
+                  try {
+                    localStorage.removeItem("thingsnxt_pinned_dashboard");
+                  } catch {}
+                  setPinnedInfo(null);
+                }}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "5px",
+                  border: "1px solid #FDBA74",
+                  backgroundColor: "#FFFFFF",
+                  color: "#9A3412",
+                  fontSize: "11.5px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Unpin
+              </button>
+            )}
           </div>
 
           {/* Assigned Workspaces Section */}

@@ -38,6 +38,7 @@ import {
   Menu,
   X,
   MoreHorizontal,
+  Pin,
 } from "../common/Icons";
 
 export default function DashboardShell({
@@ -67,6 +68,17 @@ export default function DashboardShell({
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
   const [wsSearch, setWsSearch] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [pinnedId, setPinnedId] = useState(null);
+
+  useEffect(() => {
+    try {
+      const savedStr = typeof window !== "undefined" ? localStorage.getItem("thingsnxt_pinned_dashboard") : null;
+      if (savedStr) {
+        const saved = JSON.parse(savedStr);
+        setPinnedId(saved?.id || null);
+      }
+    } catch {}
+  }, [activeDashboardId]);
 
   useEffect(() => {
     if (dashboards && dashboards.length > 0) {
@@ -895,6 +907,9 @@ export default function DashboardShell({
                         >
                           {name}
                         </span>
+                        {dashId === pinnedId && (
+                          <Pin size={11} color="#EA580C" style={{ marginLeft: "auto", flexShrink: 0 }} />
+                        )}
                       </Link>
                     );
                   })}

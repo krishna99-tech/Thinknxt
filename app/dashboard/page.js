@@ -33,6 +33,9 @@ import {
   ArrowUpRight,
   Clock,
   Play,
+  Pin,
+  PinOff,
+  Star,
 } from "../../components/common/Icons";
 
 export default function DashboardPage() {
@@ -44,6 +47,9 @@ export default function DashboardPage() {
   const [loadingDashboards, setLoadingDashboards] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pinnedDashboard, setPinnedDashboard] = useState(null);
+  const [pinLoadingId, setPinLoadingId] = useState(null);
+  const [pinNotification, setPinNotification] = useState("");
   const [platformConfig, setPlatformConfig] = useState(null);
   const [streamCount, setStreamCount] = useState(0);
   const [filterQuery, setFilterQuery] = useState("");
@@ -124,6 +130,27 @@ export default function DashboardPage() {
         } catch {
           setWorkspaces([]);
         }
+
+        // Fetch user preferences for pinned dashboard
+        try {
+          const prefRes = await api.get("/admin/users/me/preferences");
+          if (prefRes.data?.pinned_dashboard) {
+            setPinnedDashboard(prefRes.data.pinned_dashboard);
+            try {
+              localStorage.setItem("thingsnxt_pinned_dashboard", JSON.stringify(prefRes.data.pinned_dashboard));
+            } catch {}
+          } else {
+            setPinnedDashboard(null);
+            try {
+              localStorage.removeItem("thingsnxt_pinned_dashboard");
+            } catch {}
+          }
+        } catch {
+          try {
+            const savedStr = localStorage.getItem("thingsnxt_pinned_dashboard");
+            if (savedStr) setPinnedDashboard(JSON.parse(savedStr));
+          } catch {}
+        }
       } catch (err) {
         if (err.response?.status === 401) {
           logout("/login");
@@ -137,6 +164,60 @@ export default function DashboardPage() {
 
     fetchUserData();
   }, [router]);
+
+  const handleTogglePin = async (dash) => {
+    const dashId = dash.id || dash._id;
+    const isCurrentlyPinned = pinnedDashboard?.id === dashId;
+    setPinLoadingId(dashId);
+    setPinNotification("");
+
+    const currentWsId = selectedWorkspace?.workspace_id || selectedWorkspace?.slug || selectedWorkspace?.id || "default";
+    const newPinned = isCurrentlyPinned
+      ? null
+      : {
+          id: dashId,
+          workspace_id: currentWsId,
+          name: dash.name || "Telemetry Dashboard",
+        };
+
+    try {
+      await api.put("/admin/users/me/preferences", {
+        pinned_dashboard: newPinned,
+      });
+      setPinnedDashboard(newPinned);
+      if (newPinned) {
+        try {
+          localStorage.setItem("thingsnxt_pinned_dashboard", JSON.stringify(newPinned));
+        } catch {}
+        setPinNotification(`"${dash.name || "Dashboard"}" pinned! This view will automatically open when you sign in.`);
+      } else {
+        try {
+          localStorage.removeItem("thingsnxt_pinned_dashboard");
+        } catch {}
+        setPinNotification("Dashboard unpinned. Login will now navigate to the dashboard gallery.");
+      }
+      setTimeout(() => setPinNotification(""), 4500);
+    } catch (err) {
+      console.error("Failed to sync pinned dashboard:", err);
+      // Fallback local persistence
+      if (newPinned) {
+        try {
+          localStorage.setItem("thingsnxt_pinned_dashboard", JSON.stringify(newPinned));
+        } catch {}
+        setPinnedDashboard(newPinned);
+        setPinNotification(`"${dash.name || "Dashboard"}" pinned locally in this browser.`);
+      } else {
+        try {
+          localStorage.removeItem("thingsnxt_pinned_dashboard");
+        } catch {}
+        setPinnedDashboard(null);
+        setPinNotification("Dashboard unpinned locally.");
+      }
+      setTimeout(() => setPinNotification(""), 4500);
+    } finally {
+      setPinLoadingId(null);
+    }
+  };
 
   // Fetch dashboards for the selected workspace
   useEffect(() => {
@@ -271,6 +352,116 @@ export default function DashboardPage() {
           >
             <AlertTriangle size={16} color="#DC2626" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {/* Pinned Dashboard Feedback Alert */}
+        {pinNotification && (
+          <div
+            style={{
+              backgroundColor: "#ECFDF5",
+              border: "1px solid #A7F3D0",
+              borderRadius: "12px",
+              padding: "14px 18px",
+              color: "#065F46",
+              fontSize: "13px",
+              fontWeight: "600",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              boxShadow: "0 2px 6px rgba(5, 150, 105, 0.08)",
+            }}
+          >
+            <CheckCircle2 size={16} color="#059669" />
+            <span>{pinNotification}</span>
+          </div>
+        )}
+
+        {/* Pinned Default Landing Page Banner */}
+        {pinnedDashboard?.id && (
+          <div
+            style={{
+              backgroundColor: "#FFF7ED",
+              border: "1px solid #FFEDD5",
+              borderRadius: "12px",
+              padding: "16px 22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "14px",
+              boxShadow: "0 2px 8px rgba(249, 115, 22, 0.06)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  backgroundColor: "#EA580C",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(234, 88, 12, 0.25)",
+                }}
+              >
+                <Pin size={18} color="#FFFFFF" />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "800", color: "#9A3412" }}>
+                    Default Login Dashboard:
+                  </span>
+                  <span style={{ fontSize: "14px", fontWeight: "700", color: "#0F172A" }}>
+                    {pinnedDashboard.name || "Telemetry Dashboard"}
+                  </span>
+                </div>
+                <p style={{ fontSize: "12px", color: "#C2410C", margin: "2px 0 0" }}>
+                  This dashboard will automatically open whenever you log in.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Link
+                href={`/dashboard/${pinnedDashboard.id}?ws=${encodeURIComponent(pinnedDashboard.workspace_id || wsId)}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  backgroundColor: "#EA580C",
+                  color: "#FFFFFF",
+                  fontSize: "12.5px",
+                  fontWeight: "700",
+                  textDecoration: "none",
+                  boxShadow: "0 2px 6px rgba(234, 88, 12, 0.25)",
+                }}
+              >
+                <span>Launch Pinned View</span>
+                <ArrowUpRight size={14} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleTogglePin({ id: pinnedDashboard.id, name: pinnedDashboard.name })}
+                disabled={pinLoadingId === pinnedDashboard.id}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "6px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #FDBA74",
+                  color: "#9A3412",
+                  fontSize: "12.5px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                {pinLoadingId === pinnedDashboard.id ? "Unpinning..." : "Unpin"}
+              </button>
+            </div>
           </div>
         )}
 
@@ -715,13 +906,15 @@ export default function DashboardPage() {
               {filteredDashboards.map((dash) => {
                 const dashId = dash.id || dash._id;
                 const widgetCount = dash.widget_count || dash.widgets?.length || 0;
+                const isPinned = pinnedDashboard?.id === dashId;
+                const isPinLoading = pinLoadingId === dashId;
 
                 return (
                   <div
                     key={dashId}
                     style={{
                       backgroundColor: "#FFFFFF",
-                      border: "1px solid #E2E8F0",
+                      border: isPinned ? "2px solid #F97316" : "1px solid #E2E8F0",
                       borderRadius: "12px",
                       padding: "20px 22px",
                       display: "flex",
@@ -729,41 +922,93 @@ export default function DashboardPage() {
                       justifyContent: "space-between",
                       gap: "14px",
                       minHeight: "180px",
-                      boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+                      boxShadow: isPinned ? "0 4px 16px rgba(249, 115, 22, 0.12)" : "0 2px 8px rgba(15, 23, 42, 0.04)",
+                      position: "relative",
                       transition: "border-color 0.15s ease, box-shadow 0.15s ease",
                     }}
                   >
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                        <div
-                          style={{
-                            width: "36px",
-                            height: "36px",
-                            borderRadius: "8px",
-                            backgroundColor: "#FFF7ED",
-                            border: "1px solid #FFEDD5",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#EA580C",
-                          }}
-                        >
-                          <Activity size={18} />
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "8px",
+                              backgroundColor: isPinned ? "#EA580C" : "#FFF7ED",
+                              border: `1px solid ${isPinned ? "#EA580C" : "#FFEDD5"}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: isPinned ? "#FFFFFF" : "#EA580C",
+                            }}
+                          >
+                            <Activity size={18} />
+                          </div>
+                          {isPinned && (
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                fontWeight: "700",
+                                color: "#EA580C",
+                                backgroundColor: "#FFF7ED",
+                                border: "1px solid #FFEDD5",
+                                borderRadius: "9999px",
+                                padding: "2px 8px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <Pin size={10} color="#EA580C" /> Pinned Default
+                            </span>
+                          )}
                         </div>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: "600",
-                            fontFamily: "monospace",
-                            padding: "2px 8px",
-                            borderRadius: "4px",
-                            backgroundColor: "#F1F5F9",
-                            color: "#64748B",
-                            border: "1px solid #E2E8F0",
-                          }}
-                        >
-                          {widgetCount} Widgets
-                        </span>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              fontFamily: "monospace",
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              backgroundColor: "#F1F5F9",
+                              color: "#64748B",
+                              border: "1px solid #E2E8F0",
+                            }}
+                          >
+                            {widgetCount} Widgets
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleTogglePin(dash);
+                            }}
+                            disabled={isPinLoading}
+                            title={isPinned ? "Unpin (Currently opens automatically on login)" : "Pin as default landing page on login"}
+                            style={{
+                              backgroundColor: isPinned ? "#FFF7ED" : "#F8FAFC",
+                              border: `1px solid ${isPinned ? "#FDBA74" : "#E2E8F0"}`,
+                              borderRadius: "6px",
+                              padding: "5px 8px",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              color: isPinned ? "#EA580C" : "#64748B",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <Pin size={13} color={isPinned ? "#EA580C" : "#64748B"} />
+                            <span style={{ fontSize: "11px", fontWeight: "600" }}>
+                              {isPinLoading ? "..." : isPinned ? "Pinned" : "Pin"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
 
                       <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#0F172A", margin: "0 0 4px 0" }}>
@@ -815,12 +1060,15 @@ export default function DashboardPage() {
                   {filteredDashboards.map((dash) => {
                     const dashId = dash.id || dash._id;
                     const widgetCount = dash.widget_count || dash.widgets?.length || 0;
+                    const isPinned = pinnedDashboard?.id === dashId;
+                    const isPinLoading = pinLoadingId === dashId;
 
                     return (
                       <tr
                         key={dashId}
                         style={{
                           borderBottom: "1px solid #F1F5F9",
+                          backgroundColor: isPinned ? "#FFFDFB" : "transparent",
                           transition: "background-color 0.1s ease",
                         }}
                       >
@@ -828,6 +1076,24 @@ export default function DashboardPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <Activity size={15} color="#EA580C" />
                             <span>{dash.name || "Telemetry Dashboard"}</span>
+                            {isPinned && (
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: "700",
+                                  color: "#EA580C",
+                                  backgroundColor: "#FFF7ED",
+                                  border: "1px solid #FFEDD5",
+                                  borderRadius: "9999px",
+                                  padding: "1px 6px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                }}
+                              >
+                                <Pin size={9} color="#EA580C" /> Pinned
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td style={{ padding: "14px 16px", color: "#64748B" }}>
@@ -852,25 +1118,49 @@ export default function DashboardPage() {
                           </span>
                         </td>
                         <td style={{ padding: "14px 24px", textAlign: "right" }}>
-                          <Link
-                            href={`/dashboard/${dashId}?ws=${encodeURIComponent(wsId)}`}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "6px 12px",
-                              borderRadius: "6px",
-                              backgroundColor: "#FFF7ED",
-                              color: "#EA580C",
-                              border: "1px solid #FFEDD5",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              textDecoration: "none",
-                            }}
-                          >
-                            <span>Launch</span>
-                            <ArrowUpRight size={13} />
-                          </Link>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePin(dash)}
+                              disabled={isPinLoading}
+                              title={isPinned ? "Unpin default landing page" : "Pin as default landing page on login"}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "6px 10px",
+                                borderRadius: "6px",
+                                backgroundColor: isPinned ? "#FFF7ED" : "#F8FAFC",
+                                color: isPinned ? "#EA580C" : "#64748B",
+                                border: `1px solid ${isPinned ? "#FDBA74" : "#E2E8F0"}`,
+                                fontSize: "11.5px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Pin size={12} color={isPinned ? "#EA580C" : "#64748B"} />
+                              <span>{isPinLoading ? "..." : isPinned ? "Pinned" : "Pin"}</span>
+                            </button>
+                            <Link
+                              href={`/dashboard/${dashId}?ws=${encodeURIComponent(wsId)}`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                backgroundColor: "#FFF7ED",
+                                color: "#EA580C",
+                                border: "1px solid #FFEDD5",
+                                fontSize: "12px",
+                                fontWeight: "700",
+                                textDecoration: "none",
+                              }}
+                            >
+                              <span>Launch</span>
+                              <ArrowUpRight size={13} />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );

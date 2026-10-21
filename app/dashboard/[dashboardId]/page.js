@@ -20,6 +20,7 @@ import {
   Layers,
   ArrowUpRight,
   ExternalLink,
+  Pin,
 } from "../../../components/common/Icons";
 
 export default function WorkspaceDashboardViewerPage({ params }) {
@@ -39,6 +40,9 @@ export default function WorkspaceDashboardViewerPage({ params }) {
   const [telemetryHistory, setTelemetryHistory] = useState({});
   const [downlinkFeedback, setDownlinkFeedback] = useState(null);
   const [isCommandSending, setIsCommandSending] = useState({});
+  const [isPinned, setIsPinned] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinToast, setPinToast] = useState("");
   const [deviceStats, setDeviceStats] = useState({
     ip: "192.168.0.246",
     rssi: -26,
@@ -48,7 +52,7 @@ export default function WorkspaceDashboardViewerPage({ params }) {
 
   const [workspaces, setWorkspaces] = useState([]);
 
-  // Fetch current user profile and workspaces for shell sidebar and modals
+  // Fetch current user profile, workspaces, and user preferences
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -64,7 +68,72 @@ export default function WorkspaceDashboardViewerPage({ params }) {
     api.get("/me/workspaces")
       .then((res) => setWorkspaces(res.data?.data || res.data || []))
       .catch(() => setWorkspaces([]));
-  }, [router]);
+
+    // Fetch user preferences for pinned dashboard state
+    api.get("/admin/users/me/preferences")
+      .then((res) => {
+        const pinned = res.data?.pinned_dashboard;
+        setIsPinned(pinned?.id === dashboardId);
+      })
+      .catch(() => {
+        try {
+          const savedStr = localStorage.getItem("thingsnxt_pinned_dashboard");
+          if (savedStr) {
+            const saved = JSON.parse(savedStr);
+            setIsPinned(saved?.id === dashboardId);
+          }
+        } catch {}
+      });
+  }, [router, dashboardId]);
+
+  const handleTogglePin = async () => {
+    setPinLoading(true);
+    setPinToast("");
+    const targetState = !isPinned;
+    const newPinned = targetState
+      ? {
+          id: dashboardId,
+          workspace_id: wsId,
+          name: dashboard?.name || "Telemetry Dashboard",
+        }
+      : null;
+
+    try {
+      await api.put("/admin/users/me/preferences", {
+        pinned_dashboard: newPinned,
+      });
+      setIsPinned(targetState);
+      if (targetState) {
+        try {
+          localStorage.setItem("thingsnxt_pinned_dashboard", JSON.stringify(newPinned));
+        } catch {}
+        setPinToast("Dashboard pinned! This will now open directly whenever you sign in.");
+      } else {
+        try {
+          localStorage.removeItem("thingsnxt_pinned_dashboard");
+        } catch {}
+        setPinToast("Dashboard unpinned. Logging in will now open the dashboard gallery.");
+      }
+      setTimeout(() => setPinToast(""), 4500);
+    } catch (err) {
+      console.error("Failed to pin dashboard:", err);
+      setIsPinned(targetState);
+      if (targetState) {
+        try {
+          localStorage.setItem("thingsnxt_pinned_dashboard", JSON.stringify(newPinned));
+        } catch {}
+        setPinToast("Dashboard pinned locally for this browser.");
+      } else {
+        try {
+          localStorage.removeItem("thingsnxt_pinned_dashboard");
+        } catch {}
+        setPinToast("Dashboard unpinned locally.");
+      }
+      setTimeout(() => setPinToast(""), 4500);
+    } finally {
+      setPinLoading(false);
+    }
+  };
 
   const fetchDashboard = useCallback(async (isSilent = false) => {
     if (!isSilent) setRefreshing(true);
@@ -382,6 +451,31 @@ export default function WorkspaceDashboardViewerPage({ params }) {
       title={dashboard?.name || "Live Telemetry Viewer"}
       actions={
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Pin as Login Landing Page Toggle */}
+          <button
+            type="button"
+            onClick={handleTogglePin}
+            disabled={pinLoading}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              backgroundColor: isPinned ? "#FFF7ED" : "#F8FAFC",
+              color: isPinned ? "#EA580C" : "#64748B",
+              border: `1px solid ${isPinned ? "#FDBA74" : "#E2E8F0"}`,
+              fontSize: "11.5px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            title={isPinned ? "Unpin (Currently opens automatically on login)" : "Pin as default landing page on login"}
+          >
+            <Pin size={12} color={isPinned ? "#EA580C" : "#64748B"} />
+            <span>{pinLoading ? "Saving..." : isPinned ? "Pinned on Login" : "Pin to Login"}</span>
+          </button>
+
           {/* Auto Refresh Toggle */}
           <button
             type="button"
@@ -450,6 +544,28 @@ export default function WorkspaceDashboardViewerPage({ params }) {
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+        {/* Pinned Feedback Alert */}
+        {pinToast && (
+          <div
+            style={{
+              backgroundColor: "#ECFDF5",
+              border: "1px solid #A7F3D0",
+              borderRadius: "8px",
+              padding: "12px 18px",
+              color: "#059669",
+              fontSize: "12.5px",
+              fontWeight: "600",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+            }}
+          >
+            <CheckCircle2 size={16} color="#059669" />
+            <span>{pinToast}</span>
+          </div>
+        )}
+
         {/* Downlink Action Feedback Toast */}
         {downlinkFeedback && (
           <div
@@ -529,6 +645,26 @@ export default function WorkspaceDashboardViewerPage({ params }) {
                   <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "#F97316" }} />
                   TENANT: {wsId}
                 </span>
+
+                {isPinned && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      padding: "3px 10px",
+                      borderRadius: "9999px",
+                      backgroundColor: "#FFF7ED",
+                      color: "#EA580C",
+                      border: "1px solid #FFEDD5",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <Pin size={11} color="#EA580C" />
+                    LOGIN LANDING PAGE
+                  </span>
+                )}
 
                 <span
                   style={{
