@@ -54,7 +54,7 @@ export default function LoginComponent() {
 
     try {
       await login(email, password);
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(
         getErrorMessage(err, "Invalid credentials. Please try again.")

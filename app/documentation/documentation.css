@@ -6,20 +6,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --docs-bg: #fcfdfd;
-  --docs-sidebar-bg: #f8fafc;
-  --docs-card-bg: #ffffff;
-  --docs-border: #e2e8f0;
-  --docs-border-subtle: #edf2f7;
-  --docs-text-main: #0f172a;
-  --docs-text-muted: #64748b;
-  --docs-text-subtle: #94a3b8;
-  --docs-primary: #2563eb;
-  --docs-primary-hover: #1d4ed8;
-  --docs-primary-light: #eff6ff;
-  --docs-accent: #0284c7;
-  --docs-code-bg: #0b1120;
-  --docs-code-header: #131c31;
+  --docs-bg: #F5F7FA;
+  --docs-sidebar-bg: #FFFFFF;
+  --docs-card-bg: #FFFFFF;
+  --docs-border: #E2E8F0;
+  --docs-border-subtle: #F1F5F9;
+  --docs-text-main: #0F172A;
+  --docs-text-muted: #64748B;
+  --docs-text-subtle: #94A3B8;
+  --docs-primary: #F97316;
+  --docs-primary-hover: #EA580C;
+  --docs-primary-light: #FFF7ED;
+  --docs-accent: #EA580C;
+  --docs-code-bg: #0B1120;
+  --docs-code-header: #131C31;
   --docs-radius-sm: 6px;
   --docs-radius-md: 10px;
   --docs-radius-lg: 14px;

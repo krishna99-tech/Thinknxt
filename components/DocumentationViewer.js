@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { DOCS_CATEGORIES, DOCS_DATA } from '../app/documentation/docsContent';
@@ -201,6 +202,22 @@ export default function DocumentationViewer() {
 
           <div className="docs-topbar-right">
             <div className="docs-quick-links">
+              <Link
+                href="/dashboard"
+                className="docs-top-tab"
+                style={{
+                  backgroundColor: "#FFF7ED",
+                  color: "#EA580C",
+                  border: "1px solid #FFEDD5",
+                  fontWeight: "700",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <span>← Dashboard</span>
+              </Link>
               <button
                 className={`docs-top-tab ${activeDocId === 'mqtt-guide' ? 'active' : ''}`}
                 onClick={() => handleSelectDoc('mqtt-guide')}
