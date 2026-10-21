@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # =========================================================================
 # Stage 1: Dependencies Cache
 # =========================================================================
@@ -6,7 +7,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # =========================================================================
 # Stage 2: Builder
@@ -28,7 +30,8 @@ ENV NODE_ENV=production
 # Ensure public folder exists for copy stage
 RUN mkdir -p public
 
-RUN npm run build
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 # =========================================================================
 # Stage 3: Runner
@@ -42,8 +45,8 @@ ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
 # Non-root user for container security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy static assets and standalone server output
 COPY --from=builder /app/public ./public
@@ -54,4 +57,10 @@ USER nextjs
 
 EXPOSE 3001
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:3001/ || exit 1
+
+STOPSIGNAL SIGTERM
+
 CMD ["node", "server.js"]
+
