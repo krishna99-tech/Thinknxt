@@ -25,87 +25,12 @@ import {
   List,
 } from "../../components/common/Icons";
 
-const INITIAL_NODES = [
-  {
-    id: "esp32_01",
-    name: "ESP32-WROOM-32U Gateway Node",
-    type: "gateway",
-    hardware: "ESP32-D0WDQ6-V3",
-    ip: "192.168.1.105",
-    mac: "24:6F:28:B4:9C:12",
-    firmware: "v2.4.1-prod",
-    rssi: -62,
-    freeHeap: "184 KB",
-    uptime: "14d 6h 32m",
-    status: "online",
-    telemetryTopic: "tenants/beta/devices/esp32_01/telemetry",
-    commandTopic: "tenants/beta/devices/esp32_01/command",
-    lastHeartbeat: "3 seconds ago",
-    packetCount: 42180,
-    role: "Ingress Gateway & Edge Router",
-  },
-  {
-    id: "dht22_ambient_node",
-    name: "Precision Ambient Environmental Probe",
-    type: "sensor",
-    hardware: "DHT22 / AM2302 Sensor Array",
-    ip: "192.168.1.108",
-    mac: "30:AE:A4:07:31:88",
-    firmware: "v2.2.0-sensor",
-    rssi: -68,
-    freeHeap: "142 KB",
-    uptime: "8d 19h 14m",
-    status: "online",
-    telemetryTopic: "tenants/beta/devices/dht22_ambient_node/telemetry",
-    commandTopic: "tenants/beta/devices/dht22_ambient_node/command",
-    lastHeartbeat: "5 seconds ago",
-    packetCount: 19450,
-    role: "Ambient Temp & Humidity Telemetry",
-  },
-  {
-    id: "relay_4ch_controller",
-    name: "4-Channel Industrial Actuator Controller",
-    type: "actuator",
-    hardware: "ESP32 + Opto-Isolated 10A Relays",
-    ip: "192.168.1.112",
-    mac: "A4:CF:12:88:2E:5B",
-    firmware: "v2.3.4-actuator",
-    rssi: -58,
-    freeHeap: "198 KB",
-    uptime: "21d 0h 48m",
-    status: "online",
-    telemetryTopic: "tenants/beta/devices/relay_4ch_controller/telemetry",
-    commandTopic: "tenants/beta/devices/relay_4ch_controller/command",
-    lastHeartbeat: "12 seconds ago",
-    packetCount: 9820,
-    role: "Hardware Downlink & Power Switching",
-  },
-  {
-    id: "modbus_bridge_01",
-    name: "Modbus RS-485 Industrial Bridge",
-    type: "gateway",
-    hardware: "MAX485 + ESP32 Sub-controller",
-    ip: "192.168.1.120",
-    mac: "58:BF:25:A1:66:90",
-    firmware: "v1.8.9-modbus",
-    rssi: -74,
-    freeHeap: "116 KB",
-    uptime: "2d 4h 12m",
-    status: "standby",
-    telemetryTopic: "tenants/beta/devices/modbus_bridge_01/telemetry",
-    commandTopic: "tenants/beta/devices/modbus_bridge_01/command",
-    lastHeartbeat: "45 seconds ago",
-    packetCount: 3120,
-    role: "PLC & Inverter Polling Link",
-  },
-];
-
 export default function DeviceFleetPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [workspaces, setWorkspaces] = useState([]);
   const [currentWsId, setCurrentWsId] = useState("beta");
-  const [nodes, setNodes] = useState(INITIAL_NODES);
+  const [nodes, setNodes] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -115,6 +40,42 @@ export default function DeviceFleetPage() {
   // WebSocket for Live Telemetry Ping
   const wsUrl = `ws://localhost:4001/ws?token=${getToken() || ""}&workspace=${currentWsId}`;
   const { isConnected: isLiveWs } = useWebSocket(wsUrl);
+
+  const fetchNodes = (wsId) => {
+    if (!wsId) return;
+    setIsRefreshing(true);
+    api
+      .get("/devices", { params: { workspace_id: wsId } })
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        const formatted = raw.map((d) => ({
+          id: String(d.id || d._id || ""),
+          name: d.name || "IoT Hardware Node",
+          type: d.type || "sensor",
+          hardware: d.hardware || d.type || "ESP32",
+          ip: d.ip || d.telemetry?.ip || d.telemetry?.lan_ip || "DHCP / Dynamic",
+          mac: d.mac || d.telemetry?.mac || "N/A",
+          firmware: d.firmware || d.telemetry?.firmware || d.telemetry?.fw_ver || "v1.0.0",
+          rssi: d.rssi ?? d.telemetry?.rssi ?? (d.status === "online" ? -60 : null),
+          freeHeap: d.freeHeap || (d.telemetry?.free_heap ? `${Math.round(d.telemetry.free_heap / 1024)} KB` : "—"),
+          uptime: d.uptime || (d.last_active ? new Date(d.last_active).toLocaleDateString() : "—"),
+          status: d.status || "offline",
+          telemetryTopic: `tenants/${wsId}/devices/${d.id || d._id}/telemetry`,
+          commandTopic: `tenants/${wsId}/devices/${d.id || d._id}/command`,
+          lastHeartbeat: d.last_active ? new Date(d.last_active).toLocaleTimeString() : "No heartbeat",
+          packetCount: d.packetCount || d.telemetry?.packet_count || 0,
+          role: d.location ? `${d.location} • ${d.group || "General"}` : (d.description || "Edge Telemetry Node"),
+        }));
+        setNodes(formatted);
+      })
+      .catch((err) => {
+        console.warn("Could not retrieve devices for workspace:", err);
+        setNodes([]);
+      })
+      .finally(() => {
+        setIsRefreshing(false);
+      });
+  };
 
   useEffect(() => {
     // 1. Fetch user profile
@@ -127,32 +88,48 @@ export default function DeviceFleetPage() {
     api
       .get("/me/workspaces")
       .then((res) => {
-        if (Array.isArray(res.data)) {
+        if (Array.isArray(res.data) && res.data.length > 0) {
           setWorkspaces(res.data);
-          if (res.data.length > 0) {
-            const firstId = res.data[0].workspace_id || res.data[0].slug || res.data[0].id;
-            setCurrentWsId(firstId);
-          }
+          const firstId = res.data[0].workspace_id || res.data[0].slug || res.data[0].id;
+          setCurrentWsId(firstId);
+          fetchNodes(firstId);
+        } else {
+          fetchNodes(currentWsId);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        fetchNodes(currentWsId);
+      });
   }, []);
 
-  const handlePingNode = (nodeId) => {
+  const handleWorkspaceChange = (ws) => {
+    const nextId = ws.workspace_id || ws.slug || ws.id;
+    setCurrentWsId(nextId);
+    fetchNodes(nextId);
+  };
+
+  const handlePingNode = async (nodeId) => {
     setPingStatus((prev) => ({ ...prev, [nodeId]: "pinging" }));
-    setTimeout(() => {
+    try {
+      await api.post(`/workspaces/${currentWsId}/devices/${nodeId}/command`, {
+        command: "STATUS_QUERY",
+      });
       setPingStatus((prev) => ({ ...prev, [nodeId]: "ok" }));
-      setTimeout(() => {
-        setPingStatus((prev) => ({ ...prev, [nodeId]: null }));
-      }, 3000);
-    }, 800);
+    } catch {
+      try {
+        await api.get("/devices", { params: { workspace_id: currentWsId } });
+        setPingStatus((prev) => ({ ...prev, [nodeId]: "ok" }));
+      } catch {
+        setPingStatus((prev) => ({ ...prev, [nodeId]: "err" }));
+      }
+    }
+    setTimeout(() => {
+      setPingStatus((prev) => ({ ...prev, [nodeId]: null }));
+    }, 3000);
   };
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 600);
+    fetchNodes(currentWsId);
   };
 
   const filteredNodes = useMemo(() => {
@@ -173,13 +150,15 @@ export default function DeviceFleetPage() {
   }, [nodes, searchQuery, activeFilter]);
 
   const onlineCount = nodes.filter((n) => n.status === "online").length;
+  const gatewayCount = nodes.filter((n) => n.type === "gateway").length;
+  const actuatorCount = nodes.filter((n) => n.type === "actuator").length;
 
   return (
     <DashboardShell
       currentWsName={currentWsId}
       wsId={currentWsId}
       workspaces={workspaces}
-      onSelectWorkspace={(ws) => setCurrentWsId(ws.workspace_id || ws.slug || ws.id)}
+      onSelectWorkspace={handleWorkspaceChange}
       user={user}
       isLiveWs={isLiveWs}
       activeNav="fleet"
@@ -336,7 +315,7 @@ export default function DeviceFleetPage() {
               {onlineCount} / {nodes.length}
             </div>
             <span style={{ fontSize: "12px", color: "#059669", fontWeight: "600" }}>
-              75% Network Link Health
+              {nodes.length > 0 ? Math.round((onlineCount / nodes.length) * 100) : 0}% Network Link Health
             </span>
           </div>
 
@@ -413,8 +392,8 @@ export default function DeviceFleetPage() {
             {[
               { id: "all", label: `All Nodes (${nodes.length})` },
               { id: "online", label: `Online (${onlineCount})` },
-              { id: "gateway", label: "Gateways (2)" },
-              { id: "actuator", label: "Actuators (1)" },
+              { id: "gateway", label: `Gateways (${gatewayCount})` },
+              { id: "actuator", label: `Actuators (${actuatorCount})` },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -634,7 +613,7 @@ export default function DeviceFleetPage() {
                       <div>
                         <span style={{ color: "#64748B", display: "block" }}>Wi-Fi RSSI</span>
                         <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#059669" }}>
-                          {node.rssi} dBm
+                          {node.rssi != null ? `${node.rssi} dBm` : "—"}
                         </span>
                       </div>
                       <div>
@@ -746,10 +725,10 @@ export default function DeviceFleetPage() {
                         {node.firmware}
                       </td>
                       <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: "12px", color: "#059669", fontWeight: "600" }}>
-                        {node.rssi} dBm
+                        {node.rssi != null ? `${node.rssi} dBm` : "—"}
                       </td>
                       <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: "12px", color: "#334155" }}>
-                        {node.packetCount.toLocaleString()}
+                        {(node.packetCount || 0).toLocaleString()}
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <span

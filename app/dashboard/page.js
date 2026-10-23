@@ -57,13 +57,14 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState("Live");
   const [recentPackets, setRecentPackets] = useState([]);
 
-  // Hardware stats state
+  // Genuine hardware stats state from live WebSocket / telemetry
   const [deviceStats, setDeviceStats] = useState({
-    ip: "192.168.0.246",
-    rssi: -26,
-    uptime: 45,
-    free_heap: 231364,
+    ip: null,
+    rssi: null,
+    uptime: null,
+    free_heap: null,
   });
+  const [devices, setDevices] = useState([]);
   const [lastPacketTime, setLastPacketTime] = useState(null);
 
   // Fastify WebSocket listener on port 4001 for live telemetry & status events
@@ -223,6 +224,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!selectedWorkspace) {
       setDashboards([]);
+      setDevices([]);
       return;
     }
     const wsId = selectedWorkspace.workspace_id || selectedWorkspace.slug || selectedWorkspace.id;
@@ -239,12 +241,29 @@ export default function DashboardPage() {
         setLoadingDashboards(false);
       });
 
+    // Fetch genuine devices for this workspace
+    api.get("/devices", { params: { workspace_id: wsId } })
+      .then((res) => {
+        setDevices(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Failed to load workspace devices:", err);
+        setDevices([]);
+      });
+
     // Background live polling interval (every 5s)
     const pollInterval = setInterval(() => {
       api.get(`/admin/workspaces/${wsId}/dashboards`)
         .then((res) => {
           if (Array.isArray(res.data)) {
             setDashboards(res.data);
+          }
+        })
+        .catch(() => {});
+      api.get("/devices", { params: { workspace_id: wsId } })
+        .then((res) => {
+          if (Array.isArray(res.data)) {
+            setDevices(res.data);
           }
         })
         .catch(() => {});
@@ -632,11 +651,21 @@ export default function DashboardPage() {
               <Cpu size={15} color="#10B981" />
             </div>
             <div style={{ fontSize: "26px", fontWeight: "800", color: "#0F172A", fontFamily: "monospace" }}>
-              1 <span style={{ fontSize: "13px", color: "#64748B", fontWeight: "500" }}>/ 1 Node</span>
+              {devices.length > 0 ? (
+                <>{devices.filter((d) => d.status === "online").length} <span style={{ fontSize: "13px", color: "#64748B", fontWeight: "500" }}>/ {devices.length} Node{devices.length === 1 ? "" : "s"}</span></>
+              ) : (
+                <span style={{ fontSize: "20px", color: "#94A3B8" }}>0 Nodes</span>
+              )}
             </div>
-            <div style={{ fontSize: "11.5px", color: "#059669", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
-              <CheckCircle2 size={12} />
-              <span>ESP32 broadcasting MQTT</span>
+            <div style={{ fontSize: "11.5px", color: devices.some((d) => d.status === "online") ? "#059669" : "#64748B", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+              {devices.some((d) => d.status === "online") ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} color="#94A3B8" />}
+              <span>
+                {devices.length === 0
+                  ? "No hardware nodes registered"
+                  : devices.some((d) => d.status === "online")
+                  ? `${devices.filter((d) => d.status === "online").length} active node broadcasting MQTT`
+                  : "All registered nodes offline"}
+              </span>
             </div>
           </div>
 
@@ -713,15 +742,20 @@ export default function DashboardPage() {
         {/* ──────────────────────────────────────────────────────────
             HARDWARE GATEWAY & NODE HEALTH STRIP
             ────────────────────────────────────────────────────────── */}
-        <HardwareNodeBar
-          deviceId="6ad84a0c622dd2082dd745ae"
-          ip={deviceStats.ip}
-          rssi={deviceStats.rssi}
-          uptime={deviceStats.uptime}
-          freeHeap={deviceStats.free_heap}
-          lastUpdated={lastPacketTime}
-          status="online"
-        />
+        {(() => {
+          const primaryDevice = devices.find((d) => d.status === "online") || devices[0];
+          return (
+            <HardwareNodeBar
+              deviceId={primaryDevice ? (primaryDevice.id || primaryDevice._id) : null}
+              ip={deviceStats.ip || primaryDevice?.ip || null}
+              rssi={deviceStats.rssi}
+              uptime={deviceStats.uptime}
+              freeHeap={deviceStats.free_heap}
+              lastUpdated={lastPacketTime}
+              status={primaryDevice ? primaryDevice.status : "offline"}
+            />
+          );
+        })()}
 
         {/* ──────────────────────────────────────────────────────────
             DASHBOARDS OPERATIONAL SECTION (Grid & Table Views)

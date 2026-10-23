@@ -44,10 +44,10 @@ export default function WorkspaceDashboardViewerPage({ params }) {
   const [pinLoading, setPinLoading] = useState(false);
   const [pinToast, setPinToast] = useState("");
   const [deviceStats, setDeviceStats] = useState({
-    ip: "192.168.0.246",
-    rssi: -26,
-    uptime: 45,
-    free_heap: 231364,
+    ip: null,
+    rssi: null,
+    uptime: null,
+    free_heap: null,
   });
 
   const [workspaces, setWorkspaces] = useState([]);
@@ -281,8 +281,17 @@ export default function WorkspaceDashboardViewerPage({ params }) {
   const handleToggleActuator = async (widget, targetState) => {
     const cfg = widget.config || {};
     const pin = cfg.pin || cfg.virtual_pin || "v0";
-    const devId = widget.device_id || widget.deviceId || cfg.device_id || "6ad84a0c622dd2082dd745ae";
+    const devId = widget.device_id || widget.deviceId || cfg.device_id;
     const widgetKey = widget.id || widget._id || pin;
+
+    if (!devId) {
+      setDownlinkFeedback({
+        type: "error",
+        message: `Widget "${widget.title || widget.name || 'Actuator'}" is not linked to any hardware device. Please assign a device in Admin Console.`,
+        time: new Date().toLocaleTimeString(),
+      });
+      return;
+    }
 
     setIsCommandSending((prev) => ({ ...prev, [widgetKey]: true }));
 
@@ -718,15 +727,21 @@ export default function WorkspaceDashboardViewerPage({ params }) {
         {/* ──────────────────────────────────────────────────────────
             HARDWARE TELEMETRY HEALTH BAR
             ────────────────────────────────────────────────────────── */}
-        <HardwareNodeBar
-          deviceId="6ad84a0c622dd2082dd745ae"
-          ip={deviceStats.ip}
-          rssi={deviceStats.rssi}
-          uptime={deviceStats.uptime}
-          freeHeap={deviceStats.free_heap}
-          lastUpdated={lastUpdated}
-          status="online"
-        />
+        {(() => {
+          const activeWidgetDevice = widgets.find((w) => w.device_id || w.deviceId || w.config?.device_id);
+          const devId = activeWidgetDevice ? (activeWidgetDevice.device_id || activeWidgetDevice.deviceId || activeWidgetDevice.config?.device_id) : null;
+          return (
+            <HardwareNodeBar
+              deviceId={devId}
+              ip={deviceStats.ip}
+              rssi={deviceStats.rssi}
+              uptime={deviceStats.uptime}
+              freeHeap={deviceStats.free_heap}
+              lastUpdated={lastUpdated}
+              status={devId ? (activeWidgetDevice.device_status || "online") : "unconfigured"}
+            />
+          );
+        })()}
 
         {/* ──────────────────────────────────────────────────────────
             KPI SUMMARY ROW (#FFFFFF cards, #E2E8F0 borders)
@@ -827,7 +842,7 @@ export default function WorkspaceDashboardViewerPage({ params }) {
               const deviceStatus = (widget.device_status || "online").toLowerCase();
               const cfg = widget.config || {};
               const metricKey = cfg.metric || cfg.key || cfg.pin || "temperature";
-              const devId = widget.device_id || widget.deviceId || cfg.device_id || "6ad84a0c622dd2082dd745ae";
+              const devId = widget.device_id || widget.deviceId || cfg.device_id || null;
 
               // Resolve current sensor value from telemetry payload or direct value
               let rawVal = widget.value;

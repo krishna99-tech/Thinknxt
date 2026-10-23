@@ -3,17 +3,38 @@
 import { Cpu, Wifi, Server, Database, Clock, Radio, CheckCircle2, AlertTriangle } from "../common/Icons";
 
 export default function HardwareNodeBar({
-  deviceId = "6ad84a0c622dd2082dd745ae",
-  ip = "192.168.0.246",
-  rssi = -26,
-  uptime = 45,
-  freeHeap = 231364,
+  deviceId,
+  ip,
+  rssi,
+  uptime,
+  freeHeap,
   lastUpdated,
-  status = "online",
+  status = "offline",
 }) {
-  const signalQuality = rssi >= -50 ? "Excellent" : rssi >= -70 ? "Good" : rssi >= -85 ? "Fair" : "Weak";
-  const activeBars = rssi >= -55 ? 4 : rssi >= -70 ? 3 : rssi >= -85 ? 2 : 1;
-  const freeHeapKb = Math.round(freeHeap / 1024);
+  const hasSignal = rssi !== null && rssi !== undefined && !isNaN(Number(rssi));
+  const numericRssi = hasSignal ? Number(rssi) : null;
+  const signalQuality = hasSignal
+    ? numericRssi >= -50
+      ? "Excellent"
+      : numericRssi >= -70
+      ? "Good"
+      : numericRssi >= -85
+      ? "Fair"
+      : "Weak"
+    : "No Signal";
+
+  const activeBars = hasSignal
+    ? numericRssi >= -55
+      ? 4
+      : numericRssi >= -70
+      ? 3
+      : numericRssi >= -85
+      ? 2
+      : 1
+    : 0;
+
+  const freeHeapKb = freeHeap !== null && freeHeap !== undefined ? Math.round(Number(freeHeap) / 1024) : null;
+  const isOnline = status?.toLowerCase() === "online";
 
   return (
     <section
@@ -46,12 +67,12 @@ export default function HardwareNodeBar({
             width: "40px",
             height: "40px",
             borderRadius: "8px",
-            backgroundColor: "#FFF7ED",
-            border: "1px solid #FFEDD5",
+            backgroundColor: deviceId ? "#FFF7ED" : "#F1F5F9",
+            border: deviceId ? "1px solid #FFEDD5" : "1px solid #E2E8F0",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#EA580C",
+            color: deviceId ? "#EA580C" : "#94A3B8",
             flexShrink: 0,
           }}
         >
@@ -61,31 +82,33 @@ export default function HardwareNodeBar({
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "14px", fontWeight: "700", color: "#0F172A" }}>
-              ESP32 IoT Node
+              {deviceId ? "ESP32 IoT Node" : "No Active Device"}
             </span>
-            <span
-              style={{
-                fontFamily: "monospace",
-                fontSize: "11px",
-                color: "#EA580C",
-                backgroundColor: "#FFF7ED",
-                padding: "2px 7px",
-                borderRadius: "4px",
-                border: "1px solid #FFEDD5",
-                fontWeight: "600",
-              }}
-            >
-              {deviceId}
-            </span>
+            {deviceId && (
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: "11px",
+                  color: "#EA580C",
+                  backgroundColor: "#FFF7ED",
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  border: "1px solid #FFEDD5",
+                  fontWeight: "600",
+                }}
+              >
+                {deviceId}
+              </span>
+            )}
             <span
               style={{
                 fontSize: "10px",
                 fontWeight: "700",
                 padding: "2px 7px",
                 borderRadius: "9999px",
-                backgroundColor: status === "online" ? "#ECFDF5" : "#FEF2F2",
-                color: status === "online" ? "#059669" : "#DC2626",
-                border: status === "online" ? "1px solid #A7F3D0" : "1px solid #FECACA",
+                backgroundColor: isOnline ? "#ECFDF5" : "#FEF2F2",
+                color: isOnline ? "#059669" : "#DC2626",
+                border: isOnline ? "1px solid #A7F3D0" : "1px solid #FECACA",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
@@ -96,15 +119,19 @@ export default function HardwareNodeBar({
                   width: "5px",
                   height: "5px",
                   borderRadius: "50%",
-                  backgroundColor: status === "online" ? "#10B981" : "#EF4444",
+                  backgroundColor: isOnline ? "#10B981" : "#EF4444",
                 }}
               />
-              {status.toUpperCase()}
+              {deviceId ? (isOnline ? "ONLINE" : "OFFLINE") : "UNCONFIGURED"}
             </span>
           </div>
 
           <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "3px" }}>
-            MQTT Ingest: <code style={{ color: "#334155", fontFamily: "monospace" }}>thingsnxt/device/{deviceId.slice(0, 8)}.../telemetry</code>
+            {deviceId ? (
+              <>MQTT Ingest: <code style={{ color: "#334155", fontFamily: "monospace" }}>thingsnxt/device/{String(deviceId).slice(0, 8)}.../telemetry</code></>
+            ) : (
+              "Connect or register a device to display live telemetry."
+            )}
           </div>
         </div>
       </div>
@@ -124,7 +151,11 @@ export default function HardwareNodeBar({
               <span style={{ width: "3px", height: "13px", borderRadius: "1px", backgroundColor: activeBars >= 4 ? "#10B981" : "#E2E8F0" }} />
             </div>
             <span style={{ fontSize: "12.5px", fontFamily: "monospace", color: "#0F172A", fontWeight: "600" }}>
-              {rssi} dBm <span style={{ color: "#64748B", fontSize: "11px", fontWeight: "400" }}>({signalQuality})</span>
+              {hasSignal ? (
+                <>{numericRssi} dBm <span style={{ color: "#64748B", fontSize: "11px", fontWeight: "400" }}>({signalQuality})</span></>
+              ) : (
+                <span style={{ color: "#94A3B8" }}>—</span>
+              )}
             </span>
           </div>
         </div>
@@ -137,7 +168,7 @@ export default function HardwareNodeBar({
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <Server size={13} color="#64748B" />
             <span style={{ fontSize: "12.5px", fontFamily: "monospace", color: "#0F172A", fontWeight: "600" }}>
-              {ip}
+              {ip || <span style={{ color: "#94A3B8" }}>—</span>}
             </span>
           </div>
         </div>
@@ -150,7 +181,7 @@ export default function HardwareNodeBar({
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <Database size={13} color="#0284C7" />
             <span style={{ fontSize: "12.5px", fontFamily: "monospace", color: "#0284C7", fontWeight: "600" }}>
-              {freeHeapKb} KB
+              {freeHeapKb !== null ? `${freeHeapKb} KB` : <span style={{ color: "#94A3B8" }}>—</span>}
             </span>
           </div>
         </div>
@@ -163,7 +194,7 @@ export default function HardwareNodeBar({
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <Clock size={13} color="#64748B" />
             <span style={{ fontSize: "12.5px", fontFamily: "monospace", color: "#0F172A", fontWeight: "600" }}>
-              {uptime}s
+              {uptime !== null && uptime !== undefined ? `${uptime}s` : <span style={{ color: "#94A3B8" }}>—</span>}
             </span>
           </div>
         </div>
